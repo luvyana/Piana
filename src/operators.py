@@ -1,7 +1,7 @@
 import bpy
 from .ui.funcs import *
 from .mods.anims import *
-from .mods.liana_main import *
+from .mods.liana import *
 from .utils.common import setup_logger
 
 import webbrowser
@@ -10,6 +10,7 @@ import time
 import subprocess
 
 logger = setup_logger(__name__)
+
 
 class ImportMap(bpy.types.Operator):
     bl_idname = "object.import_map"

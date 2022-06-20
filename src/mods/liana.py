@@ -21,7 +21,6 @@ try:
 except:
     pass
 
-
 class debug:
     SELECTIVE_OBJECTS = [
         # "Brick_12_CastleA5",
@@ -30,12 +29,13 @@ class debug:
     SELECTIVE_UMAP = [
         # "Pitt_Art_AtkPathMid",
         # "Pitt_Art_AtkPathB",
-        "Pitt_Art_DefPathB",
-        "Pitt_Art_DefSpawn",
+        # "Pitt_Art_DefPathB",
+        # "Pitt_Art_DefSpawn",
         # "Pitt_Art_AtkPathA",
     ]
 
     COUNT = 0
+
 
 
 BLACKLIST_objects = [
@@ -82,7 +82,7 @@ def extract_assets(settings: Settings):
     if settings.assets_path.joinpath("exported.yo").exists():
         logger.info("Models are already extracted")
     else:
-        logger.warning("Models are not found, starting exporting!")
+        logger.warning("Models are not found, starting exporting with args : \n{args}")
         args = [settings.umodel.__str__(),
                 f"-path={settings.paks_path.__str__()}",
                 f"-game=valorant",
@@ -95,7 +95,6 @@ def extract_assets(settings: Settings):
                 f"-{settings.texture_format.replace('.', '')}",
                 f"-out={settings.assets_path.__str__()}"]
 
-        print(args)
 
         # Export Models
         subprocess.call(args,
@@ -156,20 +155,21 @@ def get_map_assets(settings: Settings):
 
     if not settings.selected_map.folder_path.joinpath("exported.yo").exists():
         logger.info("Extracting JSON files")
+
         extract_data(settings, export_directory=settings.selected_map.umaps_path)
 
         umaps = get_files(path=settings.selected_map.umaps_path.__str__(), extension=".json")
         umap: Path
 
-        object_list = list()
-        materials_ovr_list = list()
-        materials_list = list()
+        object_list = []
+        materials_ovr_list = []
+        materials_list = []
 
         for umap in umaps:
-            umap_json, asd = filter_umap(read_json(umap))
+            umap_json, objects = filter_umap(read_json(umap))
 
             # Logging
-            ObjectTypes.append(asd)
+            ObjectTypes.append(objects)
 
             # save json
             save_json(umap.__str__(), umap_json)
@@ -1418,6 +1418,8 @@ def combine_umaps(settings: Settings):
     # a = settings.debug.SELECTIVE_UMAP or settings.selected_map.umaps
     # print(settings.selected_map)
 
+    logger.info(f"Combining : {settings.selected_map.name.capitalize()}'s parts to a single blend file...")
+
     for umap in settings.selected_map.umaps:
         umap_name = os.path.splitext(os.path.basename(umap))[0]
         umap_blend_file = settings.selected_map.scenes_path.joinpath(umap_name).__str__() + ".blend"
@@ -1437,33 +1439,30 @@ def combine_umaps(settings: Settings):
                 bpy.ops.wm.link(filepath=fp, filename=obj, directory=dr)
 
 
-def combine_maps(settings: Settings):
+def post_import(settings: Settings):
+    with redirect_stdout(stdout):
+        
+        map_path = settings.selected_map.scenes_path.joinpath(settings.selected_map.name.capitalize()).__str__()
+        bpy.ops.wm.save_as_mainfile(filepath=map_path + ".blend", compress=True)
 
-    # ! Save umap to .blend file
-    if settings.combine_umaps:
-        with redirect_stdout(stdout):
-            logger.info(f"Combining : {settings.selected_map.name.capitalize()}'s parts to a single blend file...")
-            map_path = settings.selected_map.scenes_path.joinpath(settings.selected_map.name.capitalize()).__str__()
-            bpy.ops.wm.save_as_mainfile(filepath=map_path + ".blend", compress=True)
+        # ! Clear everything
+        clean_scene()
 
-            # ! Clear everything
-            clean_scene()
+        combine_umaps(settings=settings)
 
-            combine_umaps(settings=settings)
+        # eliminate_materials()
+        remove_duplicate_mats()
+        clear_duplicate_node_groups()
 
-            # eliminate_materials()
-            remove_duplicate_mats()
-            clear_duplicate_node_groups()
+        # ! Utility to pack
+        if settings.textures == "pack":
+            bpy.ops.file.pack_all()
+        if settings.textures == "local":
+            bpy.ops.file.unpack_all(method='WRITE_LOCAL')
+            logger.info("Unpacked local textures")
 
-            # ! Utility to pack
-            if settings.textures == "pack":
-                bpy.ops.file.pack_all()
-            if settings.textures == "local":
-                bpy.ops.file.unpack_all(method='WRITE_LOCAL')
-                logger.info("Unpacked local textures")
-
-            bpy.ops.wm.save_as_mainfile(filepath=map_path + ".blend", compress=True)
-            logger.info(f"Saved Combined : '{settings.selected_map.name.capitalize()}.blend' to {shorten_path(map_path, 4)}")
+        bpy.ops.wm.save_as_mainfile(filepath=map_path + ".blend", compress=True)
+        logger.info(f"Saved Combined : '{settings.selected_map.name.capitalize()}.blend' to {shorten_path(map_path, 4)}")
 
 
 # ANCHOR MAIN FUNCTION
@@ -1496,47 +1495,51 @@ def import_map(addon_prefs):
 
     umap_json_paths = get_map_assets(settings)
 
-    if settings.debug and debug.SELECTIVE_UMAP:
-        settings.selected_map.umaps = debug.SELECTIVE_UMAP
-        umap_json_paths = []
-        for umap in debug.SELECTIVE_UMAP:
-            umap_json_paths.append(settings.selected_map.umaps_path.joinpath(f"{umap}.json"))
+    # if settings.debug and debug.SELECTIVE_UMAP:
+    #     settings.selected_map.umaps = debug.SELECTIVE_UMAP
+    #     umap_json_paths = []
+    #     for umap in debug.SELECTIVE_UMAP:
+    #         umap_json_paths.append(settings.selected_map.umaps_path.joinpath(f"{umap}.json"))
 
-    # Process each umaps
-    umap_json_path: Path
-    for umap_json_path in umap_json_paths:
+    # # Process each umaps
+    # umap_json_path: Path
+    # for umap_json_path in umap_json_paths:
 
-        if not settings.debug:
-            clean_scene()
 
-        umap_data = read_json(umap_json_path)
-        umap_name = umap_json_path.stem
+    #     # clean the scene if the debug mode is not enabled
+    #     if not settings.debug:
+    #         clean_scene()
 
-        import_umap(settings=settings, umap_data=umap_data, umap_name=umap_name)
-        remove_master_objects()
-        clear_duplicate_node_groups()
+    #     umap_data = read_json(umap_json_path)
+    #     umap_name = umap_json_path.stem
 
-    # Final
-    if settings.debug:
-        PROPS = {
+    #     import_umap(settings=settings, umap_data=umap_data, umap_name=umap_name)
+    #     remove_master_objects()
+    #     clear_duplicate_node_groups()
 
-            "ScalarParameterValues": list(dict.fromkeys(ScalarParameterValues)),
-            "StaticParameterValues": list(dict.fromkeys(StaticParameterValues)),
-            "TextureParameterValues": list(dict.fromkeys(TextureParameterValues)),
-            "BasePropertyOverrides": BasePropertyOverrides,
-            "VectorParameterValues": list(dict.fromkeys(VectorParameterValues)),
-            "MaterialTypes": list(dict.fromkeys(MaterialTypes)),
-            "OtherTypes": list(dict.fromkeys(OtherTypes))
-        }
+    # # Final
+    # if settings.debug:
+    #     PROPS = {
 
-        save_json(settings.selected_map.folder_path.joinpath("props.json"), PROPS)
-        save_json(settings.selected_map.folder_path.joinpath("material_types.json"), list(dict.fromkeys(MaterialTypes)))
-        save_json(settings.selected_map.folder_path.joinpath("object_types.json"), list(dict.fromkeys(flatten_list(ObjectTypes))))
+    #         "ScalarParameterValues": list(dict.fromkeys(ScalarParameterValues)),
+    #         "StaticParameterValues": list(dict.fromkeys(StaticParameterValues)),
+    #         "TextureParameterValues": list(dict.fromkeys(TextureParameterValues)),
+    #         "BasePropertyOverrides": BasePropertyOverrides,
+    #         "VectorParameterValues": list(dict.fromkeys(VectorParameterValues)),
+    #         "MaterialTypes": list(dict.fromkeys(MaterialTypes)),
+    #         "OtherTypes": list(dict.fromkeys(OtherTypes))
+    #     }
 
-    else:
-        if settings.combine_umaps:
-            combine_maps(settings=settings)
-        if settings.open_folder:
-            open_folder(settings.selected_map.scenes_path.__str__())
+    #     save_json(settings.selected_map.folder_path.joinpath("props.json"), PROPS)
+    #     save_json(settings.selected_map.folder_path.joinpath("material_types.json"), list(dict.fromkeys(MaterialTypes)))
+    #     save_json(settings.selected_map.folder_path.joinpath("object_types.json"), list(dict.fromkeys(flatten_list(ObjectTypes))))
+
+    # else:
+    #     if settings.combine_umaps:
+    #         post_import(settings=settings)
+    #     if settings.open_folder:
+    #         open_folder(settings.selected_map.scenes_path.__str__())
+
+        
 
     logger.info("Finished!")

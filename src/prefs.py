@@ -50,7 +50,7 @@ class PianaPreferences(AddonPreferences):
 
     paksPath: bpy.props.StringProperty(
         name='Paks Path',
-        default="",
+        default="C:\\Riot Games\\VALORANT\\influencer-event\\ShooterGame\\Content\\Paks\\",
         description="Path to your paks folder",
         subtype='DIR_PATH',
         update=update_paks_path,
@@ -58,7 +58,7 @@ class PianaPreferences(AddonPreferences):
 
     exportPath: bpy.props.StringProperty(
         name='Export Path',
-        default="",
+        default="D:\\_assets_\\valorant\\",
         description="Path to your export folder",
         subtype='DIR_PATH',
     )
@@ -112,8 +112,9 @@ class PianaPreferences(AddonPreferences):
 
     selectedMap: bpy.props.EnumProperty(
         name='Selected Map',
-        # default="bind",
-        items=get_map_list()
+        items=get_map_list(),
+        default="pearl",
+
     )
 
     scriptPath: bpy.props.StringProperty(

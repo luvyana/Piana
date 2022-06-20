@@ -2,11 +2,11 @@ import bpy
 import os
 import logging
 from math import radians
-from ...utils.common import setup_logger
+from .common import setup_logger
 
 logger = setup_logger(__name__)
 
-def clean_scene(debug: bool = False):
+def clean_scene(val_groups: bool = False):
     for block in bpy.data.meshes:
         bpy.data.meshes.remove(block)
 
@@ -29,8 +29,7 @@ def clean_scene(debug: bool = False):
     for block in bpy.data.lights:
         bpy.data.lights.remove(block)
 
-
-    if debug:
+    if val_groups:
         for block in bpy.data.node_groups:
             if "VALORANT_" in block.name:
                 bpy.data.node_groups.remove(block)
