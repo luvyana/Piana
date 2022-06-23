@@ -1004,7 +1004,7 @@ def get_textures(settings: Settings, mat: bpy.types.Material, override: bool, ma
                     tex_image_node.location[0] = pos[0]
                     tex_image_node.location[1] = pos[1]
 
-                    if "diffuse" == param_name or "diffuse a" == param_name or "albedo" == param_name or "texture a" == param_name:
+                    if "diffuse" == param_name or "diffuse a" == param_name or "albedo" == param_name or "texture a" == param_name or "albedo a" == param_name:
                         nodes_texture["diffuse"] = tex_image_node
                     if "mra" == param_name or "mra a" == param_name:
                         tex_image_node.image.colorspace_settings.name = "Non-Color"
