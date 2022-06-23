@@ -24,7 +24,7 @@ Blender addon for creating VALORANT content.
 Before you download the addon, you must download these first.
 
 * [Download & Install .NET 6.0](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-6.0.5-windows-x64-installer)
-* [Blender 3.1+](https://www.blender.org/download/) - Update your Blender if it's not 3.1 (Blender 3.2 is not supported)
+* [Blender 3.1+](https://www.blender.org/download/) - Update your Blender if it's not 3.1 or 3.2 (for now it's preferred to use Blender 3.1 for faster import.)
 * At least **30+ gb of empty space.** (SSD will be faster.)
 
 
@@ -56,7 +56,7 @@ Before you download the addon, you must download these first.
 
 1. [Get this VSCode Addon](https://marketplace.visualstudio.com/items?itemName=JacquesLucke.blender-development)
 2. Start VSCode **inside "src" folder**
-2. CTRL + P > Start Blender
+2. CTRL + P > Start Blender (If it crashes re-open VS Code with admin privileges)
 4. You'll see your changes reflected live inside Blender.
 
 

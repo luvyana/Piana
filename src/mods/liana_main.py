@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 import bpy
+from bpy.types import Mesh, ShaderNodeVertexColor
 
 from contextlib import redirect_stdout
 from sys import stdout
@@ -42,13 +43,15 @@ BLACKLIST_objects = [
     "navmesh",
     "_breakable",
     "_collision",
-    "WindStreaks_Plane",
-    "SM_Port_Snowflakes_BoundMesh",
+    "windstreaks_plane",
+    "sm_port_snowflakes_boundmesh",
     "sm_barrierduality",
+    "M_Pitt_Caustics_Box",
     "box_for_volumes",
-    "SuperGrid",
-    "_Col",
-    "For_Volumes"
+    "supergrid",
+    "_col",
+    "M_Pitt_Lamps_Glow",
+    "for_volumes",
 ]
 
 BLACKLIST_textures = [
@@ -251,7 +254,7 @@ def set_materials(settings: Settings, byo: bpy.types.Object, map_object: MapObje
                             obj_data = byo.data
                             mat_data = mat_json[0]
 
-                            if obj_data.vertex_colors:
+                            if getattr(obj_data, VCOL_ATTR_NAME):
                                 mat_name = mat_data["Name"] + "_V"
                             else:
                                 mat_name = mat_data["Name"] + "_NV"
@@ -278,7 +281,7 @@ def set_materials(settings: Settings, byo: bpy.types.Object, map_object: MapObje
                         obj_data = byo.data
                         mat_data = mat_json[0]
 
-                        if obj_data.vertex_colors:
+                        if getattr(obj_data, VCOL_ATTR_NAME):
                             mat_name = mat_data["Name"] + "_V"
                         else:
                             mat_name = mat_data["Name"] + "_NV"
@@ -344,11 +347,11 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
         bpy.data.objects.remove(object_byo)
 
     # if obj_data.vertex_colors:
-    if "Vertex Color" in nodes:
-        N_VERTEX = nodes['Vertex Color']
-    else:
-        N_VERTEX = create_node(type='ShaderNodeVertexColor')
-        nodes["Vertex Color"].layer_name = "Col"
+    N_VERTEX: ShaderNodeVertexColor = nodes.get("Vertex Color")
+    if N_VERTEX is None:
+        N_VERTEX = create_node(type="ShaderNodeVertexColor")
+        N_VERTEX.layer_name = "Col"
+        N_VERTEX.name = "Vertex Color"
 
     note_textures_normal = create_node_note(nodes, "Textures : Normal")
     note_textures_override = create_node_note(nodes, "Textures : Override")
@@ -411,6 +414,7 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
         "BaseEnv_BlendNormalPan_MAT_V4",
         "BaseEnv_Blend_UV2_Masked_MAT_V4",
         "BlendEnv_MAT"
+        "MaskTintEnv_MAT"
     ]
 
     types_glass = [
@@ -444,7 +448,7 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
     ]
 
     types_spriteglow = [
-        "0_Sprite_GlowLight"
+        "0_Sprite_GlowLight",
     ]
 
     types_waterfallvista = [
@@ -582,6 +586,8 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
 
             # ANCHOR Blend Mode
             if "BlendMode" == prop_name:
+                if "Use Alpha" in N_SHADER.inputs:
+                    N_SHADER.inputs["Use Alpha"].default_value = 1
                 if "BLEND_Translucent" in prop_value:
                     blend_mode = BlendMode.BLEND
                 elif "BLEND_Masked" in prop_value:
@@ -631,12 +637,16 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
                     else:
                         N_SHADER.inputs["Use 2 NM Maps"].default_value = 0
 
+                if "use alpha power" in param_name and "Use Alpha Power" in N_SHADER.inputs:
+                    if param["Value"]:
+                        N_SHADER.inputs["Use Alpha Power"].default_value = 1
+
                 if "invert alpha (texture)" in param_name and "Invert Alpha" in N_SHADER.inputs:
                     if param["Value"]:
                         N_SHADER.inputs["Invert Alpha"].default_value = 1
 
                 if "use vertex color" in param_name:
-                    if obj_data.vertex_colors:
+                    if getattr(obj_data, VCOL_ATTR_NAME):
                         mat_switches.append(param_name)
                         if "Vertex Color" in N_SHADER.inputs:
                             link(N_VERTEX.outputs["Color"], N_SHADER.inputs["Vertex Color"])
@@ -644,12 +654,13 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
                             N_SHADER.inputs["Use Vertex Color"].default_value = 1
 
                 if "use vertex alpha" in param_name:
-                    if obj_data.vertex_colors:
+                    if getattr(obj_data, VCOL_ATTR_NAME):
                         mat_switches.append(param_name)
                         if "Vertex Alpha" in N_SHADER.inputs:
                             link(N_VERTEX.outputs["Alpha"], N_SHADER.inputs["Vertex Alpha"])
                         if "Use Vertex Alpha" in N_SHADER.inputs:
                             N_SHADER.inputs["Use Vertex Alpha"].default_value = 1
+                            N_SHADER.inputs["Use Alpha Power"].default_value = 0
 
                 if "use alpha as emissive" in param_name:
                     mat_switches.append("use alpha as emissive")
@@ -747,10 +758,6 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
                 if "Diffuse Color" in N_SHADER.inputs:
                     N_SHADER.inputs["Diffuse Color"].default_value = get_rgb(param_value)
 
-            if "color mult" in param_name:
-                if "Tint" in N_SHADER.inputs:
-                    N_SHADER.inputs["Tint"].default_value = get_rgb(param_value)
-
             if "ao color" in param_name:
                 if "AO Color" in N_SHADER.inputs:
                     N_SHADER.inputs["AO Color"].default_value = get_rgb(param_value)
@@ -779,10 +786,10 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
             if "line color" in param_name:
                 if "line color" in N_SHADER.inputs:
                     N_SHADER.inputs["line color"].default_value = get_rgb(param_value)
-            if "layer a tint" in param_name:
+            if "layer a tint" in param_name or "color mult" in param_name or "texture tint a" in param_name:
                 if "Tint" in N_SHADER.inputs:
                     N_SHADER.inputs["Tint"].default_value = get_rgb(param_value)
-            if "layer b tint" in param_name:
+            if "layer b tint" in param_name or "texture tint b" in param_name:
                 if "Tint B" in N_SHADER.inputs:
                     N_SHADER.inputs["Tint B"].default_value = get_rgb(param_value)
             VectorParameterValues.append(param['ParameterInfo']['Name'].lower())
@@ -793,7 +800,7 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
     mat.blend_method = blend_mode.name
     mat.shadow_method = 'OPAQUE' if blend_mode.name == 'OPAQUE' else 'HASHED'
 
-    if obj_data.vertex_colors:
+    if getattr(obj_data, VCOL_ATTR_NAME):
         # mat_switches.append(param_name)
         # if "Use Vertex Color" in N_SHADER.inputs:
         #     link(N_VERTEX.outputs["Color"], N_SHADER.inputs["Vertex Color"])
@@ -844,7 +851,7 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
                 #     if "Alpha" in N_SHADER.inputs and user_mat_type != "Glass":
                 #         link(node_tex.outputs["Alpha"], N_SHADER.inputs["Alpha"])
 
-        if key == "diffuse b":
+        if key == "diffuse b" or key == "texture b"  or key == "albedo b":
             if "DF B" in N_SHADER.inputs and "DF B Alpha" in N_SHADER.inputs:
                 link(node_tex.outputs["Color"], N_SHADER.inputs["DF B"])
                 link(node_tex.outputs["Alpha"], N_SHADER.inputs["DF B Alpha"])
@@ -943,6 +950,16 @@ def set_material(settings: Settings, mat: bpy.types.Material, mat_data: dict, ov
         N_SHADER.inputs["Only Glow"].default_value = 1
         N_SHADER.inputs["Emission Strength"].default_value = 15
 
+    if "Paint_M0_AsphaltStreetC" in mat.name:
+        N_SHADER.inputs["Vertex Alpha Srgb/Linear"].default_value = 0
+
+    if "Sand_" in mat.name or "SandBlend" in mat.name:
+        if "Sand_Blend" in N_SHADER.inputs:
+            N_SHADER.inputs["Sand_Blend"].default_value = 1
+
+    if "Blendable_M3_GravelGrassSat" in mat.name:
+        if "Sand_Blend" in N_SHADER.inputs:
+            N_SHADER.inputs["Sand_Blend"].default_value = 0.8
 
 def get_scalar_value(mat_props, s_param_name):
     if "ScalarParameterValues" in mat_props:
@@ -962,7 +979,20 @@ def get_image(tex_name, tex_local_path):
     return img
 
 
-def get_textures(settings: Settings, mat: bpy.types.Material, override: bool, mat_props: dict, shader, mapping):
+def get_textures(settings: Settings, mat: bpy.types.Material, override: bool, mat_props: dict , shader, mapping):
+    blacklist_tex = [
+        "Albedo_DF",
+        "MRA_MRA",
+        "Normal_NM",
+        "Diffuse B Low",
+        "Blank_M0_NM",
+        "Blank_M0_Flat_00_black_white_DF",
+        "Blank_M0_Flat_00_black_white_NM",
+        "flatnormal",
+        "flatwhite",
+        "Basalt_0_M0_Edging_DF",
+    ]
+
     nodes_texture = {}
     if "TextureParameterValues" in mat_props:
         pos = [-700, 0]
@@ -988,7 +1018,7 @@ def get_textures(settings: Settings, mat: bpy.types.Material, override: bool, ma
                     tex_image_node.location[0] = pos[0]
                     tex_image_node.location[1] = pos[1]
 
-                    if "diffuse" == param_name or "diffuse a" == param_name or "albedo" == param_name or "texture a" == param_name:
+                    if "diffuse" == param_name or "diffuse a" == param_name or "albedo" == param_name or "texture a" == param_name or "albedo a" == param_name:
                         nodes_texture["diffuse"] = tex_image_node
                     if "mra" == param_name or "mra a" == param_name:
                         tex_image_node.image.colorspace_settings.name = "Non-Color"
@@ -1110,7 +1140,7 @@ def get_textures(settings: Settings, mat: bpy.types.Material, override: bool, ma
                                     shader.inputs["Roughness"].default_value = -1
                                     shader.inputs["AO Strength"].default_value = 0.15
 
-                            if "_DF" in texture_name_raw and "Edging_DF" not in texture_name_raw and "Blank" not in texture_name_raw:
+                            if "_DF" in texture_name_raw:
                                 if "DF" in shader.inputs:
                                     mat.node_tree.links.new(tex_image_node.outputs["Color"], shader.inputs["DF"])
                                     mat.node_tree.links.new(tex_image_node.outputs["Alpha"], shader.inputs["Alpha"])
@@ -1196,8 +1226,17 @@ def filter_objects(umap_DATA, settings) -> list:
     # Check for settings.debug.BLACKLISTed items
     for og_model in filtered_list:
         model_name_lower = get_object_name(data=og_model, mat=False).lower()
+        if "OverrideMaterials" in og_model["Properties"]:
+            if og_model["Properties"]["OverrideMaterials"][0]:
+                mat_name_lower = og_model["Properties"]["OverrideMaterials"][0]["ObjectName"]
+            else:
+                mat_name_lower = "none"
+        else:
+            mat_name_lower = "none"
 
         if is_blacklisted(model_name_lower):
+            continue
+        if is_blacklisted(mat_name_lower):
             continue
         else:
             new_list.append(og_model)
@@ -1349,23 +1388,17 @@ def import_object(map_object: MapObject, target_collection: bpy.types.Collection
             if "Data" in lod_data["OverrideVertexColors"]:
                 vertex_colors_hex = lod_data["OverrideVertexColors"]["Data"]
 
-                mo = master_object.data
-                #vertex_color_layer_name = "OverrideVertexColors"
+                    mo: Mesh = master_object.data
 
-                if not mo.vertex_colors:
-                    mo.vertex_colors.new(name="Col", do_init=False)
+                    vertex_colors = [
+                        [
+                            x / 255
+                            for x in unpack_4uint8(bytes.fromhex(rgba_hex))
+                        ]
+                        for rgba_hex in vertex_colors_hex
+                    ]
 
-                color_layer = mo.vertex_colors["Col"]  # !TODO: #2 use umap name instead and rework the way vertex colors are handled
-
-                # this should be cleaned up a bit.. later..
-                # unpack_4uint8 = unpack_4uint8
-                for idx, loop in enumerate(mo.loops):
-                    vertex_color_hex = vertex_colors_hex[loop.vertex_index]
-                    r, g, b, a = unpack_4uint8(bytes.fromhex(vertex_color_hex))
-                    color_layer.data[idx].color = (color_linear_to_srgb(r / 255),
-                                                   color_linear_to_srgb(g / 255),
-                                                   color_linear_to_srgb(b / 255),
-                                                   a / 255)
+                    set_vcols_on_layer(mo, vertex_colors)
 
     # Let's goooooooo!
     if map_object.is_instanced():
