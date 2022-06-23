@@ -1388,17 +1388,17 @@ def import_object(map_object: MapObject, target_collection: bpy.types.Collection
             if "Data" in lod_data["OverrideVertexColors"]:
                 vertex_colors_hex = lod_data["OverrideVertexColors"]["Data"]
 
-                    mo: Mesh = master_object.data
+                mo: Mesh = master_object.data
 
-                    vertex_colors = [
-                        [
-                            x / 255
-                            for x in unpack_4uint8(bytes.fromhex(rgba_hex))
-                        ]
-                        for rgba_hex in vertex_colors_hex
+                vertex_colors = [
+                    [
+                        x / 255
+                        for x in unpack_4uint8(bytes.fromhex(rgba_hex))
                     ]
+                    for rgba_hex in vertex_colors_hex
+                ]
 
-                    set_vcols_on_layer(mo, vertex_colors)
+                set_vcols_on_layer(mo, vertex_colors)
 
     # Let's goooooooo!
     if map_object.is_instanced():
