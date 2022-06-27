@@ -82,7 +82,7 @@ class VIEW3D_PT_MapImporter(bpy.types.Panel):
             split = main_column.split(align=True)
             colL = split.column(align=True)
             colL.scale_y = 1.25
-            colL.operator("object.import_map", icon='IMPORT', text="Import Map!")
+            colL.operator("object.import_valorant_map", icon='IMPORT', text="Import Map!")
 
 class VIEW3D_PT_Animation(bpy.types.Panel):
     bl_space_type = "VIEW_3D"

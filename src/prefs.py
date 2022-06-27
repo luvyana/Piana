@@ -44,13 +44,13 @@ class PianaPreferences(AddonPreferences):
 
     debug: bpy.props.BoolProperty(
         name='Debug',
-        default=False,
+        default=True,
         description="Debug mode"
     )
 
     paksPath: bpy.props.StringProperty(
         name='Paks Path',
-        default="",
+        default="D:\\games\\Riot Games\\VALORANT\\live\\ShooterGame\\Content\\Paks\\",
         description="Path to your paks folder",
         subtype='DIR_PATH',
         update=update_paks_path,
@@ -125,7 +125,7 @@ class PianaPreferences(AddonPreferences):
 
     usePerfPatch: bpy.props.BoolProperty(
         name='Use PerfPatch',
-        default=False,
+        default=True,
         description="Huge speed-up, but use it with caution. A restart is recommended after."
     )
 

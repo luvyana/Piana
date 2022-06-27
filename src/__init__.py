@@ -19,7 +19,7 @@ bl_info = {
     "author": "Luviana",
     "description": "Tools & Scripts for creating VALORANT Content Creation",
     "blender": (3, 00, 0),
-    "version": (1, 0, 7),
+    "version": (1, 1, 0),
     "location": "3D View > Tools",
     "warning": "",
     "category": "Import-Export",
