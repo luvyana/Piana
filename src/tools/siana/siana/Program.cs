@@ -4,7 +4,9 @@ using CUE4Parse.UE4.Assets.Exports;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Objects.Core.Misc;
+using CUE4Parse.UE4.Objects.Meshes;
 using CUE4Parse.UE4.Versions;
+using CUE4Parse.Utils;
 using Newtonsoft.Json;
 using System.Diagnostics;
 
@@ -19,9 +21,16 @@ void log(object t)
     Console.WriteLine(t);
 }
 
+// this is bad but cba to do it properly with the code after it
+var converters = new Dictionary<Type, JsonConverter>()
+{
+    { typeof(FColorVertexBuffer), new FColorVertexBufferCustomConverter() }
+};
+var settings = new JsonSerializerSettings { ContractResolver = new CustomResolver(converters) };
+
 void writeToJSON(string path, string fileName, object data)
 {
-    var json = JsonConvert.SerializeObject(data, Formatting.Indented);
+    var json = JsonConvert.SerializeObject(data, Formatting.Indented, settings);
     try
     {
         File.WriteAllText(Path.Combine(path, $"{fileName}.json"), json);
@@ -153,3 +162,31 @@ stopwatch.Stop();
 TimeSpan ts = stopwatch.Elapsed;
 log($"Exported | {umapName} in {stopwatch.ElapsedMilliseconds} ms");
 
+class FColorVertexBufferCustomConverter : JsonConverter<FColorVertexBuffer>
+{
+    public override void WriteJson(JsonWriter writer, FColorVertexBuffer value, JsonSerializer serializer)
+    {
+        writer.WriteStartObject();
+
+        writer.WritePropertyName("Data");
+        // serializer.Serialize(writer, value.Data); // saving space and time by only writing as hex
+        writer.WriteStartArray();
+        foreach (var c in value.Data)
+            writer.WriteValue(UnsafePrint.BytesToHex(c.R, c.G, c.B, c.A)); // we need alpha even if it's 1 or 0...
+        writer.WriteEndArray();
+
+        writer.WritePropertyName("Stride");
+        writer.WriteValue(value.Stride);
+
+        writer.WritePropertyName("NumVertices");
+        writer.WriteValue(value.NumVertices);
+
+        writer.WriteEndObject();
+    }
+
+    public override FColorVertexBuffer ReadJson(JsonReader reader, Type objectType, FColorVertexBuffer existingValue, bool hasExistingValue,
+        JsonSerializer serializer)
+    {
+        throw new NotImplementedException();
+    }
+}
