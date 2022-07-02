@@ -58,7 +58,7 @@ class PianaPreferences(AddonPreferences):
 
     exportPath: bpy.props.StringProperty(
         name='Export Path',
-        default="",
+        default="D:\\_assets_\\valorant\\",
         description="Path to your export folder",
         subtype='DIR_PATH',
     )
@@ -112,7 +112,7 @@ class PianaPreferences(AddonPreferences):
 
     selectedMap: bpy.props.EnumProperty(
         name='Selected Map',
-        # default="bind",
+        default="pearl",
         items=get_map_list()
     )
 

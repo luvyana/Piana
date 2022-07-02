@@ -159,6 +159,7 @@
     ],
     "pearl": [
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_ASite",
+        "ShooterGame/Content/Maps/Pitt/Pitt_Art_DefPathA.umap",
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_AtkPathA.umap",
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_BSite.umap",
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_Signage.umap",
@@ -166,7 +167,6 @@
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_DefVista.umap",
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_DefSpawn.umap",
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_DefPathB.umap",
-        "ShooterGame/Content/Maps/Pitt/Pitt_Art_DefPathA.umap",
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_BVista.umap",
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_Blockmesh.umap",
         "ShooterGame/Content/Maps/Pitt/Pitt_Art_AtkVista.umap",

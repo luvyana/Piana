@@ -1,7 +1,7 @@
 import bpy
 from .ui.funcs import *
 from .mods.anims import *
-from .mods.liana import *
+from .mods import liana
 from .utils.common import setup_logger
 
 import webbrowser
@@ -19,7 +19,7 @@ class ImportValorantMap(bpy.types.Operator):
     def execute(self, context):
         start = time.perf_counter()
         addon_prefs = context.preferences.addons[__package__].preferences
-        import_valorant_map(addon_prefs)
+        liana.import_valorant_map(addon_prefs)
         end = time.perf_counter()
         logger.info(f"Import time:{end-start}")
         return {'FINISHED'}

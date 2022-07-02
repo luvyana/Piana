@@ -9,6 +9,7 @@ from typing import Iterable
 
 FILEBROWSER_PATH = Path(os.path.join(os.path.dirname(__file__), "..", "utils", "filebrowser.exe")).__str__()
 
+
 def setup_logger(name: str) -> logging.Logger:
     """
     Setup logger
@@ -40,6 +41,7 @@ def setup_logger(name: str) -> logging.Logger:
         logger.addHandler(ch)
 
         return logger
+
 
 def read_json(p: str) -> dict:
     """
@@ -140,14 +142,17 @@ def read_json(p: str) -> dict:
     with open(p) as json_file:
         return json.load(json_file)
 
-def read_files(p:str) -> dict:
+
+def read_files(p: str, use_lower: bool = False) -> dict:
     # read all json files in a folder and make them in to a dict
     files = get_files(p, ".json")
     d = {}
     for f in files:
-        d[f.stem] = read_json(f)
+        if use_lower:
+            d[f.stem.lower()] = read_json(f)
+        else:
+            d[f.stem] = read_json(f)
     return d
-    
 
 
 def shorten_path(file_path, length) -> str:
@@ -172,5 +177,3 @@ def flatten_list(collection):
             yield from flatten_list(x)
         else:
             yield x
-
-

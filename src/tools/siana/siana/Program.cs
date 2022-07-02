@@ -1,6 +1,7 @@
 ﻿using CUE4Parse.Encryption.Aes;
 using CUE4Parse.FileProvider;
 using CUE4Parse.UE4.Assets.Exports;
+using CUE4Parse.UE4.Assets.Exports.Component.StaticMesh;
 using CUE4Parse.UE4.Assets.Exports.Material;
 using CUE4Parse.UE4.Assets.Exports.StaticMesh;
 using CUE4Parse.UE4.Objects.Core.Misc;
@@ -98,7 +99,6 @@ foreach (UObject mapObject in mapObjects)
 
     if (filterTypes.Any(mapObject.ExportType.Contains))
     {
-        
 
         // Override Materials
         var om = mapObject.GetOrDefault<UObject[]>("OverrideMaterials", null);
@@ -147,7 +147,9 @@ foreach (UObject mapObject in mapObjects)
                     }
                 }
             }
-        }
+      
+    }
+
     }
 
 
